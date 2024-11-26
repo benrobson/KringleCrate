@@ -6,9 +6,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
+import org.bukkit.inventory.ItemStack;
 
 public class RedeemCommand implements CommandExecutor {
 
@@ -26,48 +24,28 @@ public class RedeemCommand implements CommandExecutor {
         }
 
         Player player = (Player) sender;
-        UUID playerUUID = player.getUniqueId();
 
-        // Check for permission
-        if (!player.hasPermission("kringlecrate.redeem")) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+        // Get the player's submitted gift
+        String recipientUUID = player.getUniqueId().toString();
+        ItemStack gift = plugin.getConfigManager().getGift(recipientUUID);
+
+        if (gift == null) {
+            player.sendMessage(ChatColor.RED + "You have no gifts to redeem.");
             return true;
         }
 
-        // Check redemption period
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime redemptionStart = plugin.getConfigManager().getRedemptionStart();
-        LocalDateTime redemptionEnd = plugin.getConfigManager().getRedemptionEnd();
-
-        if (now.isBefore(redemptionStart)) {
-            if (!player.hasPermission("kringlecrate.override")) {
-                player.sendMessage(ChatColor.RED + "Redemption hasn't started yet. It begins on "
-                        + ChatColor.GOLD + plugin.getConfigManager().getFormattedRedemptionStart() + ChatColor.RED + ".");
-                return true;
-            }
-        }
-
-        if (now.isAfter(redemptionEnd)) {
-            if (!player.hasPermission("kringlecrate.override")) {
-                player.sendMessage(ChatColor.RED + "The redemption period has ended. It ended on "
-                        + ChatColor.GOLD + plugin.getConfigManager().getFormattedRedemptionEnd() + ChatColor.RED + ".");
-                return true;
-            }
-        }
-
-        // Check if the player has any gifts
-        if (!plugin.getGiftManager().hasGift(playerUUID)) {
-            player.sendMessage(ChatColor.RED + "You do not have any gifts to redeem.");
+        // Ensure inventory space
+        if (player.getInventory().firstEmpty() == -1) {
+            player.sendMessage(ChatColor.RED + "You do not have enough inventory space to redeem your gift!");
             return true;
         }
 
-        // Attempt to redeem the gift
-        if (!plugin.getGiftManager().redeemGift(playerUUID)) {
-            player.sendMessage(ChatColor.RED + "You do not have enough inventory space to redeem your gifts.");
-            return true;
-        }
+        // Add gift to inventory and remove from config
+        player.getInventory().addItem(gift);
+        plugin.getConfigManager().getDataConfig().set("gifts." + recipientUUID, null);
+        plugin.getConfigManager().saveDataFile();
 
-        player.sendMessage(ChatColor.GREEN + "You have successfully redeemed your gift(s)! Check your inventory.");
+        player.sendMessage(ChatColor.GREEN + "You have successfully redeemed your gift!");
         return true;
     }
 }
