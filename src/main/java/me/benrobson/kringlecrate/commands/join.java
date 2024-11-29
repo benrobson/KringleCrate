@@ -10,12 +10,12 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-public class JoinCommand implements CommandExecutor {
+public class join implements CommandExecutor {
 
     private final KringleCrate plugin;
     private final GiftManager giftManager;
 
-    public JoinCommand(KringleCrate plugin) {
+    public join(KringleCrate plugin) {
         this.plugin = plugin;
         this.giftManager = KringleCrate.getGiftManager();
     }

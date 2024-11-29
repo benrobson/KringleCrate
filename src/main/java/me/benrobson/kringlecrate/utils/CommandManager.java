@@ -27,13 +27,13 @@ public class CommandManager implements CommandExecutor {
         String subcommand = args[0].toLowerCase();
         switch (subcommand) {
             case "join":
-                return new JoinCommand(plugin).onCommand(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
+                return new join(plugin).onCommand(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
             case "reveal":
-                return new RevealCommand(plugin).onCommand(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
+                return new reveal(plugin).onCommand(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
             case "submit":
-                return new SubmitCommand(plugin).onCommand(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
+                return new submit(plugin).onCommand(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
             case "redeem":
-                return new RedeemCommand(plugin).onCommand(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
+                return new redeem(plugin).onCommand(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
             default:
                 sender.sendMessage(ChatColor.RED + "Unknown subcommand. Usage: /kk <join|reveal|submit|redeem>");
                 return true;

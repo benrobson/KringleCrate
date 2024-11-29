@@ -10,11 +10,11 @@ import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.UUID;
 
-public class RevealCommand implements CommandExecutor {
+public class reveal implements CommandExecutor {
 
     private final KringleCrate plugin;
 
-    public RevealCommand(KringleCrate plugin) {
+    public reveal(KringleCrate plugin) {
         this.plugin = plugin;
     }
 

@@ -8,11 +8,11 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-public class RedeemCommand implements CommandExecutor {
+public class redeem implements CommandExecutor {
 
     private final KringleCrate plugin;
 
-    public RedeemCommand(KringleCrate plugin) {
+    public redeem(KringleCrate plugin) {
         this.plugin = plugin;
     }
 
