@@ -1,6 +1,10 @@
-package me.benrobson.kringlecrate.commands;
+package me.benrobson.kringlecrate.utils;
 
 import me.benrobson.kringlecrate.KringleCrate;
+import me.benrobson.kringlecrate.commands.join;
+import me.benrobson.kringlecrate.commands.redeem;
+import me.benrobson.kringlecrate.commands.reveal;
+import me.benrobson.kringlecrate.commands.submit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

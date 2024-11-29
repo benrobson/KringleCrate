@@ -24,6 +24,7 @@ public class submit implements CommandExecutor {
         }
 
         Player player = (Player) sender;
+        String playerUUID = player.getUniqueId().toString();
 
         // Check if it's past the reveal date
         if (plugin.getConfigManager().isRevealDay()) {
@@ -31,12 +32,19 @@ public class submit implements CommandExecutor {
             return true;
         }
 
+        // Debug: Log the player's UUID
+        plugin.getLogger().info("Submitting gift for player UUID: " + playerUUID);
+
         // Check if the player has an assigned recipient
-        String assignedPlayer = plugin.getConfigManager().getAssignedPlayer(player.getUniqueId().toString());
+        String assignedPlayer = plugin.getConfigManager().getAssignedPlayer(playerUUID);
         if (assignedPlayer == null) {
             player.sendMessage(ChatColor.RED + "You do not have an assigned recipient!");
+            plugin.getLogger().info("No assigned recipient found for UUID: " + playerUUID);
             return true;
         }
+
+        // Debug: Log the assigned player
+        plugin.getLogger().info("Assigned recipient for " + playerUUID + ": " + assignedPlayer);
 
         // Check if the player is holding an item
         ItemStack itemInHand = player.getInventory().getItemInMainHand();

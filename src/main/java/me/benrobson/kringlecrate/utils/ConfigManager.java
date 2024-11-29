@@ -72,6 +72,34 @@ public class ConfigManager {
         }
     }
 
+    public LocalDateTime getRedemptionStart() {
+        String startDateString = plugin.getConfig().getString("redemption-start");
+        try {
+            return LocalDateTime.parse(startDateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (DateTimeParseException | NullPointerException e) {
+            plugin.getLogger().severe("Invalid redemption-start format in config.yml: " + startDateString);
+            return LocalDateTime.MIN; // Return a minimal value to ensure it won't validate
+        }
+    }
+
+    public LocalDateTime getRedemptionEnd() {
+        String endDateString = plugin.getConfig().getString("redemption-end");
+        try {
+            return LocalDateTime.parse(endDateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (DateTimeParseException | NullPointerException e) {
+            plugin.getLogger().severe("Invalid redemption-end format in config.yml: " + endDateString);
+            return LocalDateTime.MAX; // Return a maximal value to ensure it won't validate
+        }
+    }
+
+    public String getFormattedRedemptionPeriod() {
+        DateTimeFormatter formatter = getDisplayFormatter(); // Formatter for display
+        return "from " + getRedemptionStart().format(formatter) + " to " + getRedemptionEnd().format(formatter);
+    }
+
+    public DateTimeFormatter getDisplayFormatter() {
+        return DateTimeFormatter.ofPattern("d MMMM yyyy");
+    }
 
     public boolean isRevealDay() {
         LocalDateTime now = LocalDateTime.now();
@@ -79,7 +107,11 @@ public class ConfigManager {
     }
 
     public String getAssignedPlayer(String uuid) {
-        return dataConfig.getString("assignments." + uuid);
+        // Debug: Log what is being retrieved
+        plugin.getLogger().info("Fetching assignment for UUID: " + uuid);
+        String assigned = dataConfig.getString("assignments." + uuid);
+        plugin.getLogger().info("Found assigned player: " + assigned);
+        return assigned;
     }
 
     public ItemStack getGift(String recipientUUID) {

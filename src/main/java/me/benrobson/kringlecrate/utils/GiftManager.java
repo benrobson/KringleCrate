@@ -1,12 +1,15 @@
 package me.benrobson.kringlecrate.utils;
 
 import me.benrobson.kringlecrate.KringleCrate;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.io.BukkitObjectInputStream;
+import org.bukkit.util.io.BukkitObjectOutputStream;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class GiftManager {
     private final KringleCrate plugin;
@@ -20,80 +23,89 @@ public class GiftManager {
             try {
                 dataFile.createNewFile();
             } catch (IOException e) {
-                e.printStackTrace();
+                plugin.getLogger().severe("Could not create data.yml: " + e.getMessage());
             }
         }
         this.data = YamlConfiguration.loadConfiguration(dataFile);
     }
 
-    public void saveData() {
+    private synchronized void saveData() {
         try {
             data.save(dataFile);
         } catch (IOException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("Could not save data.yml: " + e.getMessage());
         }
     }
 
-    // Store a gift for a player identified by UUID
     public void storeGift(UUID recipient, ItemStack gift, String note, UUID sender) {
-        String path = "gifts." + recipient.toString();  // Use UUID as string for path
-        data.set(path + ".item", gift);
+        String path = "gifts." + recipient.toString();
+        data.set(path + ".item", serializeItemStack(gift));
         data.set(path + ".note", note);
         data.set(path + ".sender", sender.toString());
         saveData();
     }
 
-    // Retrieve the gift for a player by UUID
     public Map<String, Object> getGift(UUID recipient) {
-        String path = "gifts." + recipient.toString();  // Use UUID as string for path
+        String path = "gifts." + recipient.toString();
         return data.getConfigurationSection(path) != null ? data.getConfigurationSection(path).getValues(false) : null;
     }
 
-    // Check if a player has a gift
     public boolean hasGift(UUID recipient) {
-        return getGift(recipient) != null;
+        return data.contains("gifts." + recipient.toString());
     }
 
-    // Redeem a gift for a player by UUID
     public boolean redeemGift(UUID recipient) {
         Map<String, Object> giftData = getGift(recipient);
         if (giftData == null) {
-            return false; // No gift to redeem
+            return false;
         }
 
-        ItemStack gift = (ItemStack) giftData.get("item");
+        ItemStack gift = deserializeItemStack((String) giftData.get("item"));
         if (gift == null || gift.getAmount() <= 0) {
-            return false; // Invalid gift
+            return false;
         }
 
-        // Check if the player's inventory can hold the gift
-        if (!plugin.getServer().getPlayer(recipient).getInventory().addItem(gift).isEmpty()) {
-            return false; // Not enough space in inventory
+        if (!Bukkit.getPlayer(recipient).getInventory().addItem(gift).isEmpty()) {
+            return false;
         }
 
-        // Remove the gift after redemption
         data.set("gifts." + recipient.toString(), null);
         saveData();
-        return true; // Successfully redeemed the gift
+        return true;
     }
 
-    // Add a participant to the participants list
     public void addParticipant(UUID player) {
-        List<String> participants = data.getStringList("participants");
-        if (!participants.contains(player.toString())) {
-            participants.add(player.toString());
-            data.set("participants", participants);
+        Set<String> participants = new HashSet<>(data.getStringList("participants"));
+        if (participants.add(player.toString())) {
+            data.set("participants", new ArrayList<>(participants));
             saveData();
         }
     }
 
-    // Retrieve the list of participants as UUIDs
     public List<UUID> getParticipants() {
-        List<String> participants = data.getStringList("participants");
-        List<UUID> uuids = new ArrayList<>();
-        for (String id : participants) {
-            uuids.add(UUID.fromString(id));
+        return data.getStringList("participants").stream()
+                .map(UUID::fromString)
+                .collect(Collectors.toList());
+    }
+
+    private String serializeItemStack(ItemStack item) {
+        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+             BukkitObjectOutputStream bukkitStream = new BukkitObjectOutputStream(byteStream)) {
+            bukkitStream.writeObject(item);
+            return Base64.getEncoder().encodeToString(byteStream.toByteArray());
+        } catch (IOException e) {
+            plugin.getLogger().severe("Could not serialize ItemStack: " + e.getMessage());
+            return null;
         }
-        return uuids;
+    }
+
+    private ItemStack deserializeItemStack(String base64) {
+        try (ByteArrayInputStream byteStream = new ByteArrayInputStream(Base64.getDecoder().decode(base64));
+             BukkitObjectInputStream bukkitStream = new BukkitObjectInputStream(byteStream)) {
+            return (ItemStack) bukkitStream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            plugin.getLogger().severe("Could not deserialize ItemStack: " + e.getMessage());
+            return null;
+        }
     }
 }

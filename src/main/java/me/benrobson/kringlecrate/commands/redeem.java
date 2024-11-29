@@ -8,6 +8,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.time.LocalDateTime;
+
 public class redeem implements CommandExecutor {
 
     private final KringleCrate plugin;
@@ -24,6 +26,17 @@ public class redeem implements CommandExecutor {
         }
 
         Player player = (Player) sender;
+
+        // Check if it's within the redemption period
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime redemptionStart = plugin.getConfigManager().getRedemptionStart();
+        LocalDateTime redemptionEnd = plugin.getConfigManager().getRedemptionEnd();
+
+        if (now.isBefore(redemptionStart) || now.isAfter(redemptionEnd)) {
+            player.sendMessage(ChatColor.RED + "You can only redeem gifts " +
+                    plugin.getConfigManager().getFormattedRedemptionPeriod() + ".");
+            return true;
+        }
 
         // Get the player's submitted gift
         String recipientUUID = player.getUniqueId().toString();

@@ -1,7 +1,9 @@
 package me.benrobson.kringlecrate.commands;
 
 import me.benrobson.kringlecrate.KringleCrate;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -9,6 +11,7 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class reveal implements CommandExecutor {
 
@@ -40,21 +43,35 @@ public class reveal implements CommandExecutor {
             return true;
         }
 
-        // Reveal recipient
-        List<UUID> participants = plugin.getGiftManager().getParticipants();
-        if (!participants.contains(player.getUniqueId())) {
-            player.sendMessage(ChatColor.RED + "You are not part of the Secret Santa event!");
-            return true;
-        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            List<UUID> participants = plugin.getGiftManager().getParticipants();
+            if (!participants.contains(player.getUniqueId())) {
+                Bukkit.getScheduler().runTask(plugin, () ->
+                        player.sendMessage(ChatColor.RED + "You are not part of the Secret Santa event!")
+                );
+                return;
+            }
 
-        // Assign recipient, ensuring the player does not get themselves
-        UUID recipient = participants.get((int) (Math.random() * participants.size()));
-        while (recipient.equals(player.getUniqueId())) {
-            recipient = participants.get((int) (Math.random() * participants.size()));
-        }
+            if (participants.size() <= 1) {
+                Bukkit.getScheduler().runTask(plugin, () ->
+                        player.sendMessage(ChatColor.RED + "Not enough participants to assign a recipient!")
+                );
+                return;
+            }
 
-        player.sendMessage(ChatColor.GREEN + "Your assigned recipient is: "
-                + ChatColor.GOLD + plugin.getServer().getOfflinePlayer(recipient).getName());
+            UUID recipient;
+            do {
+                recipient = participants.get(ThreadLocalRandom.current().nextInt(participants.size()));
+            } while (recipient.equals(player.getUniqueId()));
+
+            UUID finalRecipient = recipient;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                OfflinePlayer recipientPlayer = Bukkit.getOfflinePlayer(finalRecipient);
+                player.sendMessage(ChatColor.GREEN + "Your assigned recipient is: "
+                        + ChatColor.GOLD + recipientPlayer.getName());
+            });
+        });
+
         return true;
     }
 }
