@@ -107,9 +107,8 @@ public class ConfigManager {
     }
 
     public String getAssignedPlayer(String uuid) {
-        // Debug: Log what is being retrieved
         plugin.getLogger().info("Fetching assignment for UUID: " + uuid);
-        String assigned = dataConfig.getString("assignments." + uuid);
+        String assigned = dataConfig.getString("assignments." + uuid); // Ensure "assignments" matches YML structure
         plugin.getLogger().info("Found assigned player: " + assigned);
         return assigned;
     }

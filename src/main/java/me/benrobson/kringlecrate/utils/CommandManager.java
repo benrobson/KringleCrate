@@ -23,7 +23,7 @@ public class CommandManager implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "Usage: /kk <join|reveal|submit|redeem>");
+            sender.sendMessage(ChatColor.RED + "Usage: /kc <join|reveal|submit|redeem>");
             return true;
         }
 
@@ -39,7 +39,7 @@ public class CommandManager implements CommandExecutor {
             case "redeem":
                 return new redeem(plugin).onCommand(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
             default:
-                sender.sendMessage(ChatColor.RED + "Unknown subcommand. Usage: /kk <join|reveal|submit|redeem>");
+                sender.sendMessage(ChatColor.RED + "Unknown subcommand. Usage: /kc <join|reveal|submit|redeem>");
                 return true;
         }
     }

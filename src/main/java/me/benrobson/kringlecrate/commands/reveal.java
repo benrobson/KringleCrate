@@ -1,6 +1,7 @@
 package me.benrobson.kringlecrate.commands;
 
 import me.benrobson.kringlecrate.KringleCrate;
+import me.benrobson.kringlecrate.utils.ParticipantManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -11,7 +12,6 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class reveal implements CommandExecutor {
 
@@ -36,7 +36,7 @@ public class reveal implements CommandExecutor {
             return true;
         }
 
-        // Check if the player has the override permission to bypass reveal day
+        // Check if the reveal date has passed or if the player has an override permission
         if (!plugin.getConfigManager().isRevealDay() && !player.hasPermission("kringlecrate.override")) {
             player.sendMessage(ChatColor.RED + "You cannot reveal your recipient until the reveal day: "
                     + ChatColor.GOLD + plugin.getConfigManager().getFormattedRevealDate());
@@ -44,7 +44,11 @@ public class reveal implements CommandExecutor {
         }
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            ParticipantManager participantManager = plugin.getParticipantManager(); // Now this works
+
             List<UUID> participants = plugin.getGiftManager().getParticipants();
+
+            // Check if the player is part of the event
             if (!participants.contains(player.getUniqueId())) {
                 Bukkit.getScheduler().runTask(plugin, () ->
                         player.sendMessage(ChatColor.RED + "You are not part of the Secret Santa event!")
@@ -52,6 +56,7 @@ public class reveal implements CommandExecutor {
                 return;
             }
 
+            // Check if there are enough participants
             if (participants.size() <= 1) {
                 Bukkit.getScheduler().runTask(plugin, () ->
                         player.sendMessage(ChatColor.RED + "Not enough participants to assign a recipient!")
@@ -59,14 +64,27 @@ public class reveal implements CommandExecutor {
                 return;
             }
 
-            UUID recipient;
-            do {
-                recipient = participants.get(ThreadLocalRandom.current().nextInt(participants.size()));
-            } while (recipient.equals(player.getUniqueId()));
+            // Assign recipients if not already done
+            if (!plugin.getConfigManager().getDataConfig().contains("assignments")) {
+                participantManager.assignParticipants();
+            }
 
-            UUID finalRecipient = recipient;
+            // Get the recipient for the player
+            String recipientUUID = plugin.getConfigManager()
+                    .getDataConfig()
+                    .getString("assignments." + player.getUniqueId().toString());
+
+            if (recipientUUID == null) {
+                Bukkit.getScheduler().runTask(plugin, () ->
+                        player.sendMessage(ChatColor.RED + "No recipient assigned. Please contact an administrator.")
+                );
+                return;
+            }
+
+            UUID recipientId = UUID.fromString(recipientUUID);
+            OfflinePlayer recipientPlayer = Bukkit.getOfflinePlayer(recipientId);
+
             Bukkit.getScheduler().runTask(plugin, () -> {
-                OfflinePlayer recipientPlayer = Bukkit.getOfflinePlayer(finalRecipient);
                 player.sendMessage(ChatColor.GREEN + "Your assigned recipient is: "
                         + ChatColor.GOLD + recipientPlayer.getName());
             });

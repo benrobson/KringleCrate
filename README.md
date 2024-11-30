@@ -24,20 +24,20 @@ redemption-end: "2025-01-01T00:00:00"
 ```
 
 ## Commands
-* /kk join 
+* /kc join 
   * Description: Opt into the Secret Santa event.
-* /kk reveal
+* /kc reveal
   Description: Reveal your assigned recipient (after the reveal date).
-* /kk submit
+* /kc submit
   Description: Submit a gift for your assigned recipient.
-  /kk redeem
+  /kc redeem
   Description: Redeem gifts from your Secret Santa.
   Permissions
-  kringlecrate.override: Allows staff/admins to bypass reveal date restrictions.
+  kringlecrate.override: Allows admins to bypass reveal date restrictions.
 
 ## How It Works
-* Players use `/kk join` to join the event. 
+* Players use `/kc join` to join the event. 
 * The plugin assigns a random recipient to each participant. 
-* Participants can submit a gift using `/kk submit` (before the redemption period begins). 
-* On the reveal date, players can use `/kk reveal` to see their assigned recipient. 
-* Gifts can be redeemed using `/kk redeem` during the redemption period.
+* Participants can submit a gift using `/kc submit` (before the redemption period begins). 
+* On the reveal date, players can use `/kc reveal` to see their assigned recipient. 
+* Gifts can be redeemed using `/kc redeem` during the redemption period.
