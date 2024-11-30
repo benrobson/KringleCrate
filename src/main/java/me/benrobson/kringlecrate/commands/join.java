@@ -1,7 +1,7 @@
 package me.benrobson.kringlecrate.commands;
 
 import me.benrobson.kringlecrate.KringleCrate;
-import me.benrobson.kringlecrate.utils.GiftManager;
+import me.benrobson.kringlecrate.utils.ParticipantManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,11 +13,11 @@ import java.util.UUID;
 public class join implements CommandExecutor {
 
     private final KringleCrate plugin;
-    private final GiftManager giftManager;
+    private final ParticipantManager participantManager;
 
     public join(KringleCrate plugin) {
         this.plugin = plugin;
-        this.giftManager = KringleCrate.getGiftManager();
+        this.participantManager = plugin.getParticipantManager();
     }
 
     @Override
@@ -31,13 +31,13 @@ public class join implements CommandExecutor {
         UUID playerUUID = player.getUniqueId();
 
         // Check if the player is already opted in
-        if (giftManager.getParticipants().contains(playerUUID)) {
+        if (participantManager.getParticipants().contains(playerUUID.toString())) {
             player.sendMessage(ChatColor.RED + "You have already joined the Secret Santa event!");
             return true;
         }
 
         // Add the player as a participant
-        giftManager.addParticipant(playerUUID);
+        participantManager.addParticipant(playerUUID);
 
         // Notify the player
         player.sendMessage(ChatColor.GREEN + "You have successfully joined the Secret Santa event!");

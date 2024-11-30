@@ -2,92 +2,83 @@ package me.benrobson.kringlecrate.utils;
 
 import me.benrobson.kringlecrate.KringleCrate;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
 
 import java.io.*;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Base64;
+import java.util.UUID;
 
 public class GiftManager {
     private final KringleCrate plugin;
-    private final File dataFile;
-    private final YamlConfiguration data;
 
     public GiftManager(KringleCrate plugin) {
         this.plugin = plugin;
-        this.dataFile = new File(plugin.getDataFolder(), "data.yml");
-        if (!dataFile.exists()) {
-            try {
-                dataFile.createNewFile();
-            } catch (IOException e) {
-                plugin.getLogger().severe("Could not create data.yml: " + e.getMessage());
-            }
-        }
-        this.data = YamlConfiguration.loadConfiguration(dataFile);
     }
 
-    private synchronized void saveData() {
-        try {
-            data.save(dataFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Could not save data.yml: " + e.getMessage());
-        }
+    // Save the data file to disk
+    private synchronized void saveDataFile() {
+        plugin.getConfigManager().saveDataFile();
     }
 
+    // Store a gift for a recipient
     public void storeGift(UUID recipient, ItemStack gift, String note, UUID sender) {
         String path = "gifts." + recipient.toString();
-        data.set(path + ".item", serializeItemStack(gift));
-        data.set(path + ".note", note);
-        data.set(path + ".sender", sender.toString());
-        saveData();
+        plugin.getConfigManager().getDataConfig().set(path + ".item", serializeItemStack(gift));
+        plugin.getConfigManager().getDataConfig().set(path + ".note", note);
+        plugin.getConfigManager().getDataConfig().set(path + ".sender", sender.toString());
+        saveDataFile();
     }
 
-    public Map<String, Object> getGift(UUID recipient) {
-        String path = "gifts." + recipient.toString();
-        return data.getConfigurationSection(path) != null ? data.getConfigurationSection(path).getValues(false) : null;
+    // Retrieve a gift for a recipient
+    public ItemStack getGift(UUID recipientUUID) {
+        String path = "gifts." + recipientUUID.toString() + ".item";
+        if (!plugin.getConfigManager().getDataConfig().contains(path)) return null;
+
+        try {
+            String serializedItem = plugin.getConfigManager().getDataConfig().getString(path);
+            return deserializeItemStack(serializedItem);
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to deserialize gift for recipient: " + recipientUUID);
+            return null;
+        }
     }
 
+    // Check if a player has a gift
     public boolean hasGift(UUID recipient) {
-        return data.contains("gifts." + recipient.toString());
+        return plugin.getConfigManager().getDataConfig().contains("gifts." + recipient.toString());
     }
 
+    // Redeem a gift for a player
     public boolean redeemGift(UUID recipient) {
-        Map<String, Object> giftData = getGift(recipient);
-        if (giftData == null) {
+        Player player = Bukkit.getPlayer(recipient);
+        if (player == null) {
+            plugin.getLogger().warning("Player with UUID " + recipient + " is not online.");
             return false;
         }
 
-        ItemStack gift = deserializeItemStack((String) giftData.get("item"));
-        if (gift == null || gift.getAmount() <= 0) {
+        ItemStack gift = getGift(recipient);
+        if (gift == null) {
+            plugin.getLogger().warning("No gift found for UUID: " + recipient);
             return false;
         }
 
-        if (!Bukkit.getPlayer(recipient).getInventory().addItem(gift).isEmpty()) {
+        // Add the gift to the player's inventory
+        if (!player.getInventory().addItem(gift).isEmpty()) {
+            player.sendMessage("Your inventory is full! Clear some space to redeem your gift.");
             return false;
         }
 
-        data.set("gifts." + recipient.toString(), null);
-        saveData();
+        // Remove the gift from the data file
+        plugin.getConfigManager().getDataConfig().set("gifts." + recipient.toString(), null);
+        saveDataFile();
+        player.sendMessage("You have redeemed your gift!");
         return true;
     }
 
-    public void addParticipant(UUID player) {
-        Set<String> participants = new HashSet<>(data.getStringList("participants"));
-        if (participants.add(player.toString())) {
-            data.set("participants", new ArrayList<>(participants));
-            saveData();
-        }
-    }
-
-    public List<UUID> getParticipants() {
-        return data.getStringList("participants").stream()
-                .map(UUID::fromString)
-                .collect(Collectors.toList());
-    }
-
+    // Serialize an ItemStack into a Base64 string
     private String serializeItemStack(ItemStack item) {
         try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
              BukkitObjectOutputStream bukkitStream = new BukkitObjectOutputStream(byteStream)) {
@@ -99,6 +90,7 @@ public class GiftManager {
         }
     }
 
+    // Deserialize a Base64 string into an ItemStack
     private ItemStack deserializeItemStack(String base64) {
         try (ByteArrayInputStream byteStream = new ByteArrayInputStream(Base64.getDecoder().decode(base64));
              BukkitObjectInputStream bukkitStream = new BukkitObjectInputStream(byteStream)) {

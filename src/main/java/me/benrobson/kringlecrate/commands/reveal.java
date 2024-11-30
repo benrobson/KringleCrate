@@ -1,6 +1,7 @@
 package me.benrobson.kringlecrate.commands;
 
 import me.benrobson.kringlecrate.KringleCrate;
+import me.benrobson.kringlecrate.utils.DateUtils;
 import me.benrobson.kringlecrate.utils.ParticipantManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -37,7 +38,7 @@ public class reveal implements CommandExecutor {
         }
 
         // Check if the reveal date has passed or if the player has an override permission
-        if (!plugin.getConfigManager().isRevealDay() && !player.hasPermission("kringlecrate.override")) {
+        if (!DateUtils.isRevealDay() && !player.hasPermission("kringlecrate.override")) {
             player.sendMessage(ChatColor.RED + "You cannot reveal your recipient until the reveal day: "
                     + ChatColor.GOLD + plugin.getConfigManager().getFormattedRevealDate());
             return true;
@@ -46,10 +47,10 @@ public class reveal implements CommandExecutor {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             ParticipantManager participantManager = plugin.getParticipantManager(); // Now this works
 
-            List<UUID> participants = plugin.getGiftManager().getParticipants();
+            List<String> participants = plugin.getParticipantManager().getParticipants();
 
             // Check if the player is part of the event
-            if (!participants.contains(player.getUniqueId())) {
+            if (!participants.contains(player.getUniqueId().toString())) {
                 Bukkit.getScheduler().runTask(plugin, () ->
                         player.sendMessage(ChatColor.RED + "You are not part of the Secret Santa event!")
                 );

@@ -1,6 +1,7 @@
 package me.benrobson.kringlecrate.commands;
 
 import me.benrobson.kringlecrate.KringleCrate;
+import me.benrobson.kringlecrate.utils.DateUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -27,7 +28,7 @@ public class submit implements CommandExecutor {
         String playerUUID = player.getUniqueId().toString();
 
         // Check if it's past the reveal date
-        if (plugin.getConfigManager().isRevealDay()) {
+        if (DateUtils.isRevealDay()) {
             player.sendMessage(ChatColor.RED + "You cannot submit gifts after the reveal date!");
             return true;
         }
@@ -36,7 +37,7 @@ public class submit implements CommandExecutor {
         plugin.getLogger().info("Submitting gift for player UUID: " + playerUUID);
 
         // Check if the player has an assigned recipient
-        String assignedPlayer = plugin.getConfigManager().getAssignedPlayer(playerUUID);
+        String assignedPlayer = plugin.getParticipantManager().getAssignedPlayer(playerUUID);
         if (assignedPlayer == null) {
             player.sendMessage(ChatColor.RED + "You do not have an assigned recipient!");
             plugin.getLogger().info("No assigned recipient found for UUID: " + playerUUID);

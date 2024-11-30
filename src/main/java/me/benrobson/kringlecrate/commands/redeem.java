@@ -1,6 +1,8 @@
 package me.benrobson.kringlecrate.commands;
 
 import me.benrobson.kringlecrate.KringleCrate;
+import me.benrobson.kringlecrate.utils.DateUtils;
+import me.benrobson.kringlecrate.utils.FormatterUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -9,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class redeem implements CommandExecutor {
 
@@ -29,18 +32,18 @@ public class redeem implements CommandExecutor {
 
         // Check if it's within the redemption period
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime redemptionStart = plugin.getConfigManager().getRedemptionStart();
-        LocalDateTime redemptionEnd = plugin.getConfigManager().getRedemptionEnd();
+        LocalDateTime redemptionStart = DateUtils.getRedemptionStart();
+        LocalDateTime redemptionEnd = DateUtils.getRedemptionEnd();
 
         if (now.isBefore(redemptionStart) || now.isAfter(redemptionEnd)) {
             player.sendMessage(ChatColor.RED + "You can only redeem gifts " +
-                    plugin.getConfigManager().getFormattedRedemptionPeriod() + ".");
+                    FormatterUtils.getFormattedRedemptionPeriod() + ".");
             return true;
         }
 
         // Get the player's submitted gift
-        String recipientUUID = player.getUniqueId().toString();
-        ItemStack gift = plugin.getConfigManager().getGift(recipientUUID);
+        UUID recipientUUID = player.getUniqueId();
+        ItemStack gift = plugin.getGiftManager().getGift(recipientUUID);
 
         if (gift == null) {
             player.sendMessage(ChatColor.RED + "You have no gifts to redeem.");
