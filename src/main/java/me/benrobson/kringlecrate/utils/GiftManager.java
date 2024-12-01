@@ -1,15 +1,12 @@
 package me.benrobson.kringlecrate.utils;
 
 import me.benrobson.kringlecrate.KringleCrate;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
 
 import java.io.*;
-import java.util.Base64;
-import java.util.UUID;
+import java.util.*;
 
 public class GiftManager {
     private final KringleCrate plugin;
@@ -18,64 +15,57 @@ public class GiftManager {
         this.plugin = plugin;
     }
 
-    // Save the data file to disk
-    private synchronized void saveDataFile() {
-        plugin.getConfigManager().saveDataFile();
-    }
+    // Save a gift submission for a recipient
+    public void saveGiftSubmission(String recipient, String senderName, ItemStack gift) {
+        UUID recipientUUID = UUID.fromString(recipient);
+        String basePath = "gifts." + recipientUUID;
 
-    // Store a gift for a recipient
-    public void storeGift(UUID recipient, ItemStack gift, String note, UUID sender) {
-        String path = "gifts." + recipient.toString();
-        plugin.getConfigManager().getDataConfig().set(path + ".item", serializeItemStack(gift));
-        plugin.getConfigManager().getDataConfig().set(path + ".note", note);
-        plugin.getConfigManager().getDataConfig().set(path + ".sender", sender.toString());
-        saveDataFile();
-    }
-
-    // Retrieve a gift for a recipient
-    public ItemStack getGift(UUID recipientUUID) {
-        String path = "gifts." + recipientUUID.toString() + ".item";
-        if (!plugin.getConfigManager().getDataConfig().contains(path)) return null;
-
-        try {
-            String serializedItem = plugin.getConfigManager().getDataConfig().getString(path);
-            return deserializeItemStack(serializedItem);
-        } catch (Exception e) {
-            plugin.getLogger().severe("Failed to deserialize gift for recipient: " + recipientUUID);
-            return null;
-        }
-    }
-
-    // Check if a player has a gift
-    public boolean hasGift(UUID recipient) {
-        return plugin.getConfigManager().getDataConfig().contains("gifts." + recipient.toString());
-    }
-
-    // Redeem a gift for a player
-    public boolean redeemGift(UUID recipient) {
-        Player player = Bukkit.getPlayer(recipient);
-        if (player == null) {
-            plugin.getLogger().warning("Player with UUID " + recipient + " is not online.");
-            return false;
+        List<Map<String, Object>> gifts = (List<Map<String, Object>>) plugin.getConfigManager().getConfig().getList(basePath);
+        if (gifts == null) {
+            gifts = new ArrayList<>();
         }
 
-        ItemStack gift = getGift(recipient);
-        if (gift == null) {
-            plugin.getLogger().warning("No gift found for UUID: " + recipient);
-            return false;
-        }
+        // Create a map to represent the new gift
+        Map<String, Object> giftData = new HashMap<>();
+        giftData.put("item", serializeItemStack(gift));
+        giftData.put("sender", senderName);
 
-        // Add the gift to the player's inventory
-        if (!player.getInventory().addItem(gift).isEmpty()) {
-            player.sendMessage("Your inventory is full! Clear some space to redeem your gift.");
-            return false;
-        }
+        // Add the new gift to the list
+        gifts.add(giftData);
 
-        // Remove the gift from the data file
-        plugin.getConfigManager().getDataConfig().set("gifts." + recipient.toString(), null);
-        saveDataFile();
-        player.sendMessage("You have redeemed your gift!");
-        return true;
+        // Save the updated list back to the config file
+        plugin.getConfigManager().getConfig().set(basePath, gifts);
+        plugin.getConfigManager().saveConfigFile();
+
+        plugin.getLogger().info("Gift saved for recipient " + recipientUUID + ": " + giftData);
+    }
+
+    // Retrieve all gifts for a recipient
+    public List<ItemStack> getGifts(UUID recipientUUID) {
+        String basePath = "gifts." + recipientUUID;
+        List<Map<String, Object>> giftsData = (List<Map<String, Object>>) plugin.getConfigManager().getConfig().getList(basePath);
+        List<ItemStack> gifts = new ArrayList<>();
+
+        if (giftsData != null) {
+            for (Map<String, Object> giftData : giftsData) {
+                String serializedItem = (String) giftData.get("item");
+                if (serializedItem != null) {
+                    ItemStack gift = deserializeItemStack(serializedItem);
+                    if (gift != null) {
+                        gifts.add(gift);
+                    }
+                }
+            }
+        }
+        return gifts;
+    }
+
+    // Clear all gifts for a recipient
+    public void clearGifts(UUID recipientUUID) {
+        String basePath = "gifts." + recipientUUID;
+        plugin.getConfigManager().getConfig().set(basePath, null);
+        plugin.getConfigManager().saveConfigFile();
+        plugin.getLogger().info("Cleared gifts for recipient: " + recipientUUID);
     }
 
     // Serialize an ItemStack into a Base64 string

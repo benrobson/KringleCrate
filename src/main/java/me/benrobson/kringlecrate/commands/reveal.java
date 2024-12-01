@@ -2,6 +2,7 @@ package me.benrobson.kringlecrate.commands;
 
 import me.benrobson.kringlecrate.KringleCrate;
 import me.benrobson.kringlecrate.utils.DateUtils;
+import me.benrobson.kringlecrate.utils.FormatterUtils;
 import me.benrobson.kringlecrate.utils.ParticipantManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -31,33 +32,27 @@ public class reveal implements CommandExecutor {
 
         Player player = (Player) sender;
 
-        // Check for permission
-        if (!player.hasPermission("kringlecrate.reveal")) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
-            return true;
-        }
-
-        // Check if the reveal date has passed or if the player has an override permission
+        // Verify the reveal date or override permission
         if (!DateUtils.isRevealDay() && !player.hasPermission("kringlecrate.override")) {
             player.sendMessage(ChatColor.RED + "You cannot reveal your recipient until the reveal day: "
-                    + ChatColor.GOLD + plugin.getConfigManager().getFormattedRevealDate());
+                    + ChatColor.GOLD + FormatterUtils.getFormattedRevealDate());
             return true;
         }
 
+        // Run the recipient lookup asynchronously
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            ParticipantManager participantManager = plugin.getParticipantManager(); // Now this works
+            ParticipantManager participantManager = plugin.getParticipantManager();
 
-            List<String> participants = plugin.getParticipantManager().getParticipants();
-
-            // Check if the player is part of the event
+            // Validate if the player is part of the Secret Santa event
+            List<String> participants = participantManager.getParticipants();
             if (!participants.contains(player.getUniqueId().toString())) {
                 Bukkit.getScheduler().runTask(plugin, () ->
-                        player.sendMessage(ChatColor.RED + "You are not part of the Secret Santa event!")
+                        player.sendMessage(ChatColor.RED + "You are not part of the Secret Santa event. Use /kc join.")
                 );
                 return;
             }
 
-            // Check if there are enough participants
+            // Ensure enough participants for assignments
             if (participants.size() <= 1) {
                 Bukkit.getScheduler().runTask(plugin, () ->
                         player.sendMessage(ChatColor.RED + "Not enough participants to assign a recipient!")
@@ -65,14 +60,14 @@ public class reveal implements CommandExecutor {
                 return;
             }
 
-            // Assign recipients if not already done
-            if (!plugin.getConfigManager().getDataConfig().contains("assignments")) {
+            // Assign recipients if not done already
+            if (!plugin.getConfigManager().getConfig().contains("assignments")) {
                 participantManager.assignParticipants();
             }
 
-            // Get the recipient for the player
+            // Retrieve the recipient for the player
             String recipientUUID = plugin.getConfigManager()
-                    .getDataConfig()
+                    .getConfig()
                     .getString("assignments." + player.getUniqueId().toString());
 
             if (recipientUUID == null) {
@@ -82,13 +77,16 @@ public class reveal implements CommandExecutor {
                 return;
             }
 
+            // Fetch the recipient's name
             UUID recipientId = UUID.fromString(recipientUUID);
             OfflinePlayer recipientPlayer = Bukkit.getOfflinePlayer(recipientId);
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                player.sendMessage(ChatColor.GREEN + "Your assigned recipient is: "
-                        + ChatColor.GOLD + recipientPlayer.getName());
-            });
+            // Notify the player of their assigned recipient
+            Bukkit.getScheduler().runTask(plugin, () ->
+                    player.sendMessage(ChatColor.GREEN + "Your assigned recipient is: "
+                            + ChatColor.GOLD + (recipientPlayer.getName() != null
+                            ? recipientPlayer.getName()
+                            : "Unknown Player")));
         });
 
         return true;

@@ -13,35 +13,33 @@ public class ParticipantManager {
         this.plugin = plugin;
     }
 
-    // Method to get the list of participants (for checking in the join command)
+    // Method to get the list of participants
     public List<String> getParticipants() {
-        return plugin.getConfigManager().getDataConfig().getStringList("participants");
+        return plugin.getConfigManager().getConfig().getStringList("participants");
     }
 
     // Method to add a participant
     public void addParticipant(UUID playerUUID) {
-        List<String> participants = plugin.getConfigManager().getDataConfig().getStringList("participants");
+        List<String> participants = plugin.getConfigManager().getConfig().getStringList("participants");
 
         // Convert UUID to String for storage
         if (!participants.contains(playerUUID.toString())) {
             participants.add(playerUUID.toString()); // Add the player's UUID as a string
-            plugin.getConfigManager().getDataConfig().set("participants", participants);
-            plugin.getConfigManager().savePlayerData();  // Save the changes
+            plugin.getConfigManager().getConfig().set("participants", participants);
+            plugin.getConfigManager().saveConfigFile(); // Save the changes
             plugin.getLogger().info("Player " + playerUUID + " added to the Secret Santa participants list.");
         }
     }
 
+    // Method to get the assigned player for a participant
     public String getAssignedPlayer(String playerUUID) {
-        String assignedPlayer = plugin.getConfigManager().getDataConfig().getString("assignments." + playerUUID.toString());
-        if (assignedPlayer != null) {
-            return assignedPlayer;
-        }
-        return null; // No assigned player, return null
+        return plugin.getConfigManager().getConfig().getString("assignments." + playerUUID);
     }
 
     // Method to assign participants (for Secret Santa pairing)
     public void assignParticipants() {
-        List<String> participants = plugin.getConfigManager().getDataConfig().getStringList("participants");
+        List<String> participants = plugin.getConfigManager().getConfig().getStringList("participants");
+
         if (participants.size() < 2) {
             plugin.getLogger().severe("Not enough participants to assign recipients.");
             return;
@@ -53,10 +51,10 @@ public class ParticipantManager {
         for (int i = 0; i < participants.size(); i++) {
             String giver = participants.get(i);
             String recipient = participants.get((i + 1) % participants.size());
-            plugin.getConfigManager().getDataConfig().set("assignments." + giver, recipient);
+            plugin.getConfigManager().getConfig().set("assignments." + giver, recipient);
         }
 
-        plugin.getConfigManager().savePlayerData();
+        plugin.getConfigManager().saveConfigFile();
         plugin.getLogger().info("Recipients successfully assigned!");
     }
 }

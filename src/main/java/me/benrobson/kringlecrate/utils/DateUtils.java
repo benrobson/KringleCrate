@@ -10,6 +10,10 @@ public class DateUtils {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"); // Standard format
     private static KringleCrate plugin;
 
+    public DateUtils(KringleCrate plugin) {
+        this.plugin = plugin;
+    }
+
     // Get the reveal date from the config
     public static LocalDateTime getRevealDate() {
         String dateString = plugin.getConfig().getString("reveal-date");
@@ -43,11 +47,14 @@ public class DateUtils {
         }
     }
 
-    // Check if today is the reveal day
     public static boolean isRevealDay() {
-        LocalDateTime revealDate = getRevealDate();
-        LocalDateTime today = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS); // Get today's date with time truncated
-        return today.equals(revealDate.truncatedTo(ChronoUnit.DAYS)); // Compare just the date part
+        LocalDateTime revealDate = FormatterUtils.getRevealDate();
+        return !LocalDateTime.now().isBefore(revealDate);
+    }
+
+    public static boolean isBeforeRevealDate() {
+        LocalDateTime revealDate = FormatterUtils.getRevealDate();
+        return LocalDateTime.now().isBefore(revealDate);
     }
 
     // Check if the current date is within the redemption period
@@ -58,8 +65,9 @@ public class DateUtils {
         return !now.isBefore(redemptionStart) && !now.isAfter(redemptionEnd);
     }
 
-    // Utility method to format a LocalDateTime as a string
-    public static String formatDate(LocalDateTime dateTime) {
-        return dateTime.format(formatter);
+    public static String getFormattedRedemptionPeriod() {
+        return getRedemptionStart().format(formatter) +
+                " to " +
+                getRedemptionEnd().format(formatter);
     }
 }

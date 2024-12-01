@@ -1,8 +1,8 @@
 package me.benrobson.kringlecrate.commands;
 
 import me.benrobson.kringlecrate.KringleCrate;
+import me.benrobson.kringlecrate.utils.ConfigManager;
 import me.benrobson.kringlecrate.utils.DateUtils;
-import me.benrobson.kringlecrate.utils.FormatterUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -10,15 +10,17 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class redeem implements CommandExecutor {
 
     private final KringleCrate plugin;
+    private final ConfigManager configManager;
 
     public redeem(KringleCrate plugin) {
         this.plugin = plugin;
+        this.configManager = plugin.getConfigManager(); // Get ConfigManager instance
     }
 
     @Override
@@ -29,39 +31,49 @@ public class redeem implements CommandExecutor {
         }
 
         Player player = (Player) sender;
+        UUID playerUUID = player.getUniqueId();
 
-        // Check if it's within the redemption period
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime redemptionStart = DateUtils.getRedemptionStart();
-        LocalDateTime redemptionEnd = DateUtils.getRedemptionEnd();
+        // Debug: Check UUID
+        plugin.getLogger().info("Redeem command triggered by player: " + playerUUID);
 
-        if (now.isBefore(redemptionStart) || now.isAfter(redemptionEnd)) {
-            player.sendMessage(ChatColor.RED + "You can only redeem gifts " +
-                    FormatterUtils.getFormattedRedemptionPeriod() + ".");
+        // Check if the current date is within the redemption period
+        if (!DateUtils.isInRedemptionPeriod()) {
+            player.sendMessage(ChatColor.RED + "Gifts can only be redeemed during the redemption period: "
+                    + ChatColor.GOLD + DateUtils.getFormattedRedemptionPeriod());
             return true;
         }
 
-        // Get the player's submitted gift
-        UUID recipientUUID = player.getUniqueId();
-        ItemStack gift = plugin.getGiftManager().getGift(recipientUUID);
+        // Retrieve the gifts from config.yml
+        List<?> rawGifts = configManager.getConfig().getList("gifts." + playerUUID.toString());
 
-        if (gift == null) {
+        // Ensure the list is not null and of the correct type
+        if (rawGifts == null || rawGifts.isEmpty() || !(rawGifts.get(0) instanceof ItemStack)) {
             player.sendMessage(ChatColor.RED + "You have no gifts to redeem.");
+            plugin.getLogger().info("No gifts found for player: " + playerUUID);
             return true;
         }
 
-        // Ensure inventory space
-        if (player.getInventory().firstEmpty() == -1) {
-            player.sendMessage(ChatColor.RED + "You do not have enough inventory space to redeem your gift!");
-            return true;
+        List<ItemStack> gifts = (List<ItemStack>) rawGifts; // Safely cast to List<ItemStack>
+
+        plugin.getLogger().info("Gifts found for player: " + playerUUID + ", count: " + gifts.size());
+
+        // Process the gifts
+        for (ItemStack gift : gifts) {
+            // Check inventory space
+            if (player.getInventory().firstEmpty() == -1) {
+                player.sendMessage(ChatColor.RED + "You don't have enough inventory space.");
+                return true;
+            }
+
+            // Add the item to the player's inventory
+            player.getInventory().addItem(gift);
         }
 
-        // Add gift to inventory and remove from config
-        player.getInventory().addItem(gift);
-        plugin.getConfigManager().getDataConfig().set("gifts." + recipientUUID, null);
-        plugin.getConfigManager().saveDataFile();
+        // Remove redeemed gifts from config.yml
+        configManager.getConfig().set("gifts." + playerUUID.toString(), null);
+        configManager.saveConfigFile();
 
-        player.sendMessage(ChatColor.GREEN + "You have successfully redeemed your gift!");
+        player.sendMessage(ChatColor.GREEN + "All your gifts have been redeemed!");
         return true;
     }
 }

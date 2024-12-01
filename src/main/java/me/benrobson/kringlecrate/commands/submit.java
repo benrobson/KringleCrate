@@ -2,6 +2,7 @@ package me.benrobson.kringlecrate.commands;
 
 import me.benrobson.kringlecrate.KringleCrate;
 import me.benrobson.kringlecrate.utils.DateUtils;
+import me.benrobson.kringlecrate.utils.FormatterUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -27,9 +28,10 @@ public class submit implements CommandExecutor {
         Player player = (Player) sender;
         String playerUUID = player.getUniqueId().toString();
 
-        // Check if it's past the reveal date
-        if (DateUtils.isRevealDay()) {
-            player.sendMessage(ChatColor.RED + "You cannot submit gifts after the reveal date!");
+        // Check if submissions are not yet open (before the reveal date)
+        if (DateUtils.isBeforeRevealDate()) {
+            player.sendMessage(ChatColor.RED + "You cannot submit gifts before the reveal date: "
+                    + ChatColor.GOLD + FormatterUtils.getFormattedRevealDate());
             return true;
         }
 
@@ -54,13 +56,20 @@ public class submit implements CommandExecutor {
             return true;
         }
 
+        // Get the display name of the item
+        String itemDisplayName = itemInHand.hasItemMeta() && itemInHand.getItemMeta().hasDisplayName()
+                ? itemInHand.getItemMeta().getDisplayName()
+                : itemInHand.getType().name().toLowerCase().replace('_', ' ');
+
         // Store item details in data.yml
-        plugin.getConfigManager().saveGiftSubmission(assignedPlayer, player.getName(), itemInHand);
+        plugin.getGiftManager().saveGiftSubmission(assignedPlayer, player.getName(), itemInHand);
 
         // Remove the item from the player's hand
         player.getInventory().setItemInMainHand(null);
 
-        player.sendMessage(ChatColor.GREEN + "Your gift has been submitted to your recipient!");
+        // Send a success message with the item's display name
+        player.sendMessage(ChatColor.GREEN + "Your gift has been submitted to your recipient: " + ChatColor.AQUA + itemDisplayName + ChatColor.GREEN + "!");
+        plugin.getLogger().info("Gift successfully submitted for recipient UUID: " + assignedPlayer);
         return true;
     }
 }
