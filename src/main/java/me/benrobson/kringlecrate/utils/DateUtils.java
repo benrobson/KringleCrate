@@ -25,28 +25,6 @@ public class DateUtils {
         }
     }
 
-    // Get the redemption start date from the config
-    public static LocalDateTime getRedemptionStart() {
-        String startDateString = plugin.getConfig().getString("redemption-start");
-        try {
-            return LocalDateTime.parse(startDateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        } catch (Exception e) {
-            plugin.getLogger().severe("Invalid redemption-start format in config.yml: " + startDateString);
-            return LocalDateTime.MIN; // Return a minimal value to ensure it won't validate
-        }
-    }
-
-    // Get the redemption end date from the config
-    public static LocalDateTime getRedemptionEnd() {
-        String endDateString = plugin.getConfig().getString("redemption-end");
-        try {
-            return LocalDateTime.parse(endDateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        } catch (Exception e) {
-            plugin.getLogger().severe("Invalid redemption-end format in config.yml: " + endDateString);
-            return LocalDateTime.MAX; // Return a maximal value to ensure it won't validate
-        }
-    }
-
     public static boolean isRevealDay() {
         LocalDateTime revealDate = FormatterUtils.getRevealDate();
         return !LocalDateTime.now().isBefore(revealDate);
@@ -57,7 +35,26 @@ public class DateUtils {
         return LocalDateTime.now().isBefore(revealDate);
     }
 
-    // Check if the current date is within the redemption period
+    public static LocalDateTime getRedemptionStart() {
+        String startDateString = plugin.getConfig().getString("redemption-start");
+        try {
+            return LocalDateTime.parse(startDateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (Exception e) {
+            plugin.getLogger().severe("Invalid redemption-start format in config.yml: " + startDateString);
+            return LocalDateTime.MIN; // Return a minimal value to ensure it won't validate
+        }
+    }
+
+    public static LocalDateTime getRedemptionEnd() {
+        String endDateString = plugin.getConfig().getString("redemption-end");
+        try {
+            return LocalDateTime.parse(endDateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (Exception e) {
+            plugin.getLogger().severe("Invalid redemption-end format in config.yml: " + endDateString);
+            return LocalDateTime.MAX; // Return a maximal value to ensure it won't validate
+        }
+    }
+
     public static boolean isInRedemptionPeriod() {
         LocalDateTime redemptionStart = getRedemptionStart();
         LocalDateTime redemptionEnd = getRedemptionEnd();
