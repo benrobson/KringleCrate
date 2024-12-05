@@ -6,6 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class KringleCrate extends JavaPlugin {
 
     private static ConfigManager configManager;
+    private GiftConfigManager giftConfigManager;
     private static GiftManager giftManager;
     private static ParticipantManager participantManager;
 
@@ -16,6 +17,7 @@ public class KringleCrate extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         configManager = new ConfigManager(this);
+        giftConfigManager = new GiftConfigManager(this);
         giftManager = new GiftManager(this);
         participantManager = new ParticipantManager(this);
         formatterUtils = new FormatterUtils(this);
@@ -28,6 +30,10 @@ public class KringleCrate extends JavaPlugin {
 
     public static ConfigManager getConfigManager() {
         return configManager;
+    }
+
+    public GiftConfigManager getGiftConfigManager() {
+        return giftConfigManager;
     }
 
     public static GiftManager getGiftManager() {

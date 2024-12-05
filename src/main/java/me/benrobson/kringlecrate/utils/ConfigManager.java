@@ -9,31 +9,17 @@ import java.io.IOException;
 
 public class ConfigManager {
     private final KringleCrate plugin;
-    private final File configFile;
-    private final FileConfiguration config;
 
     public ConfigManager(KringleCrate plugin) {
         this.plugin = plugin;
-
-        // Initialize config.yml
-        configFile = new File(plugin.getDataFolder(), "config.yml");
-
-        if (!configFile.exists()) {
-            plugin.saveDefaultConfig();
-        }
-
-        this.config = YamlConfiguration.loadConfiguration(configFile);
+        plugin.saveDefaultConfig();
     }
 
     public FileConfiguration getConfig() {
-        return config;
+        return plugin.getConfig();
     }
 
     public void saveConfigFile() {
-        try {
-            config.save(configFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Could not save config.yml!");
-        }
+        plugin.saveConfig();
     }
 }

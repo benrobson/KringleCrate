@@ -25,12 +25,10 @@ public class reveal implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage(ChatColor.RED + "Only players can use this command.");
             return true;
         }
-
-        Player player = (Player) sender;
 
         // Verify the reveal date or override permission
         if (!DateUtils.isRevealDay() && !player.hasPermission("kringlecrate.override")) {
@@ -61,12 +59,12 @@ public class reveal implements CommandExecutor {
             }
 
             // Assign recipients if not done already
-            if (!plugin.getConfigManager().getConfig().contains("assignments")) {
+            if (!plugin.getGiftConfigManager().getConfig().contains("assignments")) {
                 participantManager.assignParticipants();
             }
 
             // Retrieve the recipient for the player
-            String recipientUUID = plugin.getConfigManager()
+            String recipientUUID = plugin.getGiftConfigManager()
                     .getConfig()
                     .getString("assignments." + player.getUniqueId().toString());
 
