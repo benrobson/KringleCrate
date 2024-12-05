@@ -13,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
 public class submit implements CommandExecutor {
 
     private final KringleCrate plugin;
+    private DateUtils dateUtils;
 
     public submit(KringleCrate plugin) {
         this.plugin = plugin;
@@ -32,6 +33,11 @@ public class submit implements CommandExecutor {
         if (DateUtils.isBeforeRevealDate()) {
             player.sendMessage(ChatColor.RED + "You cannot submit gifts before the reveal date: "
                     + ChatColor.GOLD + FormatterUtils.getFormattedRevealDate());
+            return true;
+        }
+
+        if (DateUtils.isInRedemptionPeriod()) {
+            player.sendMessage(ChatColor.RED + "You submit any more gifts during as the redemption period has now started.");
             return true;
         }
 

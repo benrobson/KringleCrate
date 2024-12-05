@@ -11,7 +11,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,8 +40,8 @@ public class redeem implements CommandExecutor {
         plugin.getLogger().info("[REDEEM] Command triggered by player UUID: " + playerUUID);
 
         // Check redemption period
-        if (!dateUtils.isInRedemptionPeriod()) {
-            String redemptionPeriod = dateUtils.getFormattedRedemptionPeriod();
+        if (!DateUtils.isInRedemptionPeriod()) {
+            String redemptionPeriod = DateUtils.getFormattedRedemptionPeriod();
             player.sendMessage(ChatColor.RED + "Gifts can only be redeemed during the redemption period: "
                     + ChatColor.GOLD + redemptionPeriod);
             plugin.getLogger().info("[REDEEM] Redemption attempt outside period by " + playerUUID + ". Period: " + redemptionPeriod);

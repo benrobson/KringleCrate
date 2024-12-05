@@ -1,6 +1,7 @@
 package me.benrobson.kringlecrate.commands;
 
 import me.benrobson.kringlecrate.KringleCrate;
+import me.benrobson.kringlecrate.utils.DateUtils;
 import me.benrobson.kringlecrate.utils.ParticipantManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -14,6 +15,7 @@ public class join implements CommandExecutor {
 
     private final KringleCrate plugin;
     private final ParticipantManager participantManager;
+    private DateUtils dateUtils;
 
     public join(KringleCrate plugin) {
         this.plugin = plugin;
@@ -33,6 +35,12 @@ public class join implements CommandExecutor {
         // Check if the player is already opted in
         if (participantManager.getParticipants().contains(playerUUID.toString())) {
             player.sendMessage(ChatColor.RED + "You have already joined the Secret Santa event!");
+            return true;
+        }
+
+        if (DateUtils.isInRedemptionPeriod()) {
+            player.sendMessage(ChatColor.RED + "You cannot join the Secret Santa event during the redemption period.");
+            plugin.getLogger().info("[JOIN] Join attempt inside redemption period by " + playerUUID + ".");
             return true;
         }
 
